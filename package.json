@@ -1,0 +1,20 @@
+{
+  "name": "checkinhq",
+  "version": "1.0.0",
+  "description": "Mobile-first booking CRM for Airbnb hosts and tour companies",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "migrate": "cd backend && npm run migrate",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": ["booking", "crm", "whatsapp", "saas"],
+  "author": "",
+  "license": "MIT"
+}
