@@ -12,7 +12,7 @@ class Booking {
     const query = `
       INSERT INTO bookings (
         user_id, guest_name, phone_number, check_in_date, check_out_date,
-        property_destination, status, total_amount, deposit_amount, notes, last_contacted_at
+        property_destination, status, currency, total_amount, deposit_amount, last_contacted_at
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
@@ -25,9 +25,9 @@ class Booking {
       bookingData.checkOutDate,
       bookingData.propertyDestination,
       bookingData.status || 'Inquiry',
+      bookingData.currency || 'USD',
       bookingData.totalAmount || 0,
       bookingData.depositAmount || 0,
-      bookingData.notes || null,
       new Date() // last_contacted_at set to now
     ];
     const result = await pool.query(query, values);
@@ -87,7 +87,7 @@ class Booking {
     // Build dynamic update query
     const allowedFields = [
       'guest_name', 'phone_number', 'check_in_date', 'check_out_date',
-      'property_destination', 'status', 'total_amount', 'deposit_amount', 'notes'
+      'property_destination', 'status', 'currency', 'total_amount', 'deposit_amount', 'follow_up_done'
     ];
 
     Object.keys(updates).forEach(key => {
@@ -116,12 +116,13 @@ class Booking {
   }
 
   /**
-   * Update last contacted timestamp
+   * Update last contacted timestamp and mark follow-up done
    */
   static async updateLastContacted(bookingId, userId) {
     const query = `
       UPDATE bookings
-      SET last_contacted_at = CURRENT_TIMESTAMP
+      SET last_contacted_at = CURRENT_TIMESTAMP,
+          follow_up_done = TRUE
       WHERE id = $1 AND user_id = $2
       RETURNING *
     `;

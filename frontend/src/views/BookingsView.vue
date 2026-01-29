@@ -19,7 +19,8 @@
           <v-chip value="Inquiry" variant="outlined">Inquiry</v-chip>
           <v-chip value="Quoted" variant="outlined">Quoted</v-chip>
           <v-chip value="Confirmed" variant="outlined">Confirmed</v-chip>
-          <v-chip value="Checked In" variant="outlined">Checked In</v-chip>
+          <v-chip value="Checked In" variant="outlined">{{ terminology.checkedIn }}</v-chip>
+          <v-chip value="Checked Out" variant="outlined">{{ terminology.checkedOut }}</v-chip>
         </v-chip-group>
       </v-col>
     </v-row>
@@ -75,14 +76,19 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/stores/auth'
 import BookingListItem from '@/components/BookingListItem.vue'
 
 const bookingStore = useBookingStore()
+const authStore = useAuthStore()
 
 const selectedStatus = ref('')
 const bookings = computed(() => bookingStore.bookings)
 const loading = computed(() => bookingStore.loading)
 const error = computed(() => bookingStore.error)
+
+// Get terminology for business type
+const terminology = computed(() => authStore.terminology)
 
 // Fetch bookings when filter changes
 watch(selectedStatus, async (newStatus) => {

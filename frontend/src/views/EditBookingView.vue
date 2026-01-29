@@ -24,11 +24,11 @@
       <v-col cols="12">
         <v-card class="pa-4">
           <v-form @submit.prevent="handleSubmit">
-            <h3 class="text-h6 mb-4">Guest Information</h3>
+            <h3 class="text-h6 mb-4">{{ terminology.guest }} Information</h3>
             
             <v-text-field
               v-model="formData.guestName"
-              label="Guest Name"
+              :label="terminology.guest + ' Name'"
               prepend-inner-icon="mdi-account"
               required
             />
@@ -45,23 +45,25 @@
 
             <v-text-field
               v-model="formData.checkInDate"
-              label="Check-in Date"
+              :label="terminology.checkIn + ' Date'"
               type="date"
               prepend-inner-icon="mdi-calendar-import"
+              :min="today"
               required
             />
 
             <v-text-field
               v-model="formData.checkOutDate"
-              label="Check-out Date"
+              :label="terminology.checkOut + ' Date'"
               type="date"
               prepend-inner-icon="mdi-calendar-export"
+              :min="formData.checkInDate || today"
               required
             />
 
             <v-text-field
               v-model="formData.propertyDestination"
-              label="Property or Destination"
+              :label="terminology.property"
               prepend-inner-icon="mdi-map-marker"
               required
             />
@@ -76,6 +78,13 @@
             <v-divider class="my-4" />
             <h3 class="text-h6 mb-4">Payment</h3>
 
+            <v-select
+              v-model="formData.currency"
+              label="Currency"
+              :items="currencyOptions"
+              prepend-inner-icon="mdi-currency-usd"
+            />
+
             <v-text-field
               v-model.number="formData.totalAmount"
               label="Total Amount"
@@ -83,7 +92,10 @@
               min="0"
               step="0.01"
               prepend-inner-icon="mdi-cash"
-              prefix="$"
+              :prefix="currencySymbol"
+              :error="depositExceedsTotal"
+              :hint="depositExceedsTotal ? 'Deposit cannot exceed total amount' : ''"
+              persistent-hint
             />
 
             <v-text-field
@@ -93,7 +105,10 @@
               min="0"
               step="0.01"
               prepend-inner-icon="mdi-cash-check"
-              prefix="$"
+              :prefix="currencySymbol"
+              :error="depositExceedsTotal"
+              :hint="depositExceedsTotal ? 'Deposit cannot exceed total amount' : ''"
+              persistent-hint
             />
 
             <!-- Error Message -->
@@ -127,13 +142,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const bookingStore = useBookingStore()
+const authStore = useAuthStore()
+const terminology = computed(() => authStore.terminology)
+
+// Get today's date in YYYY-MM-DD format
+const today = new Date().toISOString().split('T')[0]
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -146,6 +167,7 @@ const formData = ref({
   checkOutDate: '',
   propertyDestination: '',
   status: 'Inquiry',
+  currency: 'USD',
   totalAmount: 0,
   depositAmount: 0
 })
@@ -158,6 +180,26 @@ const statusOptions = [
   'Checked In',
   'Checked Out'
 ]
+
+const currencyOptions = [
+  { title: 'USD - US Dollar', value: 'USD' },
+  { title: 'UGX - Ugandan Shilling', value: 'UGX' },
+  { title: 'KES - Kenyan Shilling', value: 'KES' },
+  { title: 'TZS - Tanzanian Shilling', value: 'TZS' },
+  { title: 'EUR - Euro', value: 'EUR' },
+  { title: 'GBP - British Pound', value: 'GBP' }
+]
+
+const currencySymbol = computed(() => {
+  const symbols = { USD: '$', UGX: 'USh', KES: 'KSh', TZS: 'TSh', EUR: '€', GBP: '£' }
+  return symbols[formData.value.currency] || '$'
+})
+
+const depositExceedsTotal = computed(() => {
+  return formData.value.depositAmount > 0 && 
+         formData.value.totalAmount > 0 && 
+         formData.value.depositAmount > formData.value.totalAmount
+})
 
 const loadBooking = async () => {
   loading.value = true
@@ -173,6 +215,7 @@ const loadBooking = async () => {
       checkOutDate: booking.check_out_date,
       propertyDestination: booking.property_destination,
       status: booking.status,
+      currency: booking.currency || 'USD',
       totalAmount: booking.total_amount,
       depositAmount: booking.deposit_amount
     }
@@ -184,6 +227,11 @@ const loadBooking = async () => {
 }
 
 const handleSubmit = async () => {
+  if (depositExceedsTotal.value) {
+    error.value = 'Deposit amount cannot exceed total amount'
+    return
+  }
+  
   submitting.value = true
   error.value = null
 

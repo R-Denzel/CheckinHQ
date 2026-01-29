@@ -260,6 +260,12 @@ const formatDateTime = (dateString) => {
   })
 }
 
+const formatCurrency = (amount, currency = 'USD') => {
+  const symbols = { USD: '$', UGX: 'USh', KES: 'KSh', TZS: 'TSh', EUR: '€', GBP: '£' }
+  const symbol = symbols[currency] || '$'
+  return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
 const handleWhatsAppClick = async () => {
   await bookingStore.markContacted(booking.value.id)
 }

@@ -8,8 +8,16 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   business_name VARCHAR(255),
+  business_type VARCHAR(50) DEFAULT 'airbnb',
+  -- Business types: 'airbnb' for Airbnb hosts, 'tour' for Tour companies
+  is_admin BOOLEAN DEFAULT FALSE,
+  last_login_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  CONSTRAINT valid_business_type CHECK (
+    business_type IN ('airbnb', 'tour')
+  )
 );
 
 -- Bookings Table
@@ -35,9 +43,10 @@ CREATE TABLE IF NOT EXISTS bookings (
   total_amount DECIMAL(10, 2) DEFAULT 0,
   deposit_amount DECIMAL(10, 2) DEFAULT 0,
   
-  -- Notes and tracking
-  notes TEXT,
+  -- Tracking
   last_contacted_at TIMESTAMP,
+  follow_up_done BOOLEAN DEFAULT FALSE,
+  -- Marks if a follow-up has been completed for analytics
   
   -- Timestamps
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -15,18 +15,25 @@ exports.createBooking = [
   // Validation
   body('guestName').trim().notEmpty(),
   body('phoneNumber').trim().notEmpty(),
-  body('checkInDate').isDate(),
-  body('checkOutDate').isDate(),
+  body('checkInDate').notEmpty().isISO8601().toDate(),
+  body('checkOutDate').notEmpty().isISO8601().toDate(),
   body('propertyDestination').trim().notEmpty(),
   body('status').optional().isIn(['Inquiry', 'Quoted', 'Deposit Paid', 'Confirmed', 'Checked In', 'Checked Out']),
+  body('currency').optional().isIn(['USD', 'UGX', 'KES', 'TZS', 'EUR', 'GBP']),
   body('totalAmount').optional().isFloat({ min: 0 }),
-  body('depositAmount').optional().isFloat({ min: 0 }),
+  body('depositAmount').optional().isFloat({ min: 0 }).custom((value, { req }) => {
+    if (value && req.body.totalAmount && parseFloat(value) > parseFloat(req.body.totalAmount)) {
+      throw new Error('Deposit amount cannot exceed total amount');
+    }
+    return true;
+  }),
   body('notes').optional().trim(),
 
   async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.log('Validation errors:', errors.array());
         return res.status(400).json({ errors: errors.array() });
       }
 
@@ -101,12 +108,18 @@ exports.updateBooking = [
   // Validation (all fields optional for update)
   body('guestName').optional().trim().notEmpty(),
   body('phoneNumber').optional().trim().notEmpty(),
-  body('checkInDate').optional().isDate(),
-  body('checkOutDate').optional().isDate(),
+  body('checkInDate').optional().isISO8601().toDate(),
+  body('checkOutDate').optional().isISO8601().toDate(),
   body('propertyDestination').optional().trim().notEmpty(),
   body('status').optional().isIn(['Inquiry', 'Quoted', 'Deposit Paid', 'Confirmed', 'Checked In', 'Checked Out']),
+  body('currency').optional().isIn(['USD', 'UGX', 'KES', 'TZS', 'EUR', 'GBP']),
   body('totalAmount').optional().isFloat({ min: 0 }),
-  body('depositAmount').optional().isFloat({ min: 0 }),
+  body('depositAmount').optional().isFloat({ min: 0 }).custom((value, { req }) => {
+    if (value && req.body.totalAmount && parseFloat(value) > parseFloat(req.body.totalAmount)) {
+      throw new Error('Deposit amount cannot exceed total amount');
+    }
+    return true;
+  }),
   body('notes').optional().trim(),
 
   async (req, res) => {

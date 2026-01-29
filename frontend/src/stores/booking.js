@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { useAuthStore } from './auth'
 
 /**
  * Booking Store
@@ -124,6 +125,11 @@ export const useBookingStore = defineStore('booking', {
         const response = await api.bookings.getDashboard()
         this.dashboard = response.data.dashboard
       } catch (error) {
+        // Handle subscription errors
+        if (error.response?.status === 403 && error.response?.data?.trialExpired) {
+          const authStore = useAuthStore()
+          authStore.togglePaywall(true)
+        }
         this.error = error.response?.data?.error || 'Failed to fetch dashboard'
         throw error
       } finally {

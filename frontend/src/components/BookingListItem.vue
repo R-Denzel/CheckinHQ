@@ -1,63 +1,100 @@
 <template>
-  <v-list-item
-    :to="`/bookings/${booking.id}`"
-    class="booking-item"
+  <div 
+    class="chat-card booking-card" 
+    @click="navigateToBooking"
+    style="cursor: pointer; padding: 12px 16px; margin-bottom: 2px;"
   >
-    <template v-slot:prepend>
-      <v-avatar :color="statusColor" size="48">
-        <v-icon color="white">{{ statusIcon }}</v-icon>
-      </v-avatar>
-    </template>
+    <div class="d-flex align-start">
+      <!-- Avatar/Icon -->
+      <div class="mr-3">
+        <v-avatar :color="statusColor" size="52" style="border-radius: 50%;">
+          <v-icon color="white" size="28">{{ statusIcon }}</v-icon>
+        </v-avatar>
+      </div>
 
-    <v-list-item-title class="font-weight-bold">
-      {{ booking.guest_name }}
-    </v-list-item-title>
+      <!-- Content -->
+      <div class="flex-grow-1" style="min-width: 0;">
+        <!-- Guest Name & Date -->
+        <div class="d-flex justify-space-between align-center mb-1">
+          <h3 class="text-subtitle-1 font-weight-bold" style="color: #111B21; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{ booking.guest_name }}
+          </h3>
+          <span class="text-caption" style="color: #667781; white-space: nowrap; margin-left: 8px;">
+            {{ formatDate(booking.check_in_date) }}
+          </span>
+        </div>
 
-    <v-list-item-subtitle>
-      <div class="d-flex flex-column">
-        <span>{{ booking.property_destination }}</span>
-        <span class="text-caption">
+        <!-- Property/Destination -->
+        <p class="text-body-2 mb-1" style="color: #667781; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <v-icon size="14" style="color: #667781;">mdi-map-marker</v-icon>
+          {{ booking.property_destination }}
+        </p>
+
+        <!-- Check-in/out dates -->
+        <p class="text-caption mb-1" style="color: #8696A0;">
           {{ formatDate(booking.check_in_date) }} → {{ formatDate(booking.check_out_date) }}
-        </span>
-        
+        </p>
+
         <!-- Last contacted info -->
-        <span v-if="showLastContacted && booking.last_contacted_at" class="text-caption text-warning">
-          Last contact: {{ timeSince(booking.last_contacted_at) }}
-        </span>
-        <span v-if="showLastContacted && !booking.last_contacted_at" class="text-caption text-error">
-          Never contacted
-        </span>
+        <div v-if="showLastContacted" class="mb-1">
+          <v-chip 
+            v-if="booking.last_contacted_at" 
+            size="x-small" 
+            color="success"
+            variant="flat"
+            style="height: 20px; font-size: 11px;"
+          >
+            <v-icon size="12" start>mdi-check</v-icon>
+            {{ timeSince(booking.last_contacted_at) }}
+          </v-chip>
+          <v-chip 
+            v-else 
+            size="x-small" 
+            color="warning"
+            variant="flat"
+            style="height: 20px; font-size: 11px;"
+          >
+            <v-icon size="12" start>mdi-alert-circle</v-icon>
+            Not contacted
+          </v-chip>
+        </div>
 
         <!-- Payment info -->
-        <span v-if="showPayment" class="text-caption">
-          Paid: ${{ booking.deposit_amount || 0 }} / ${{ booking.total_amount || 0 }}
-        </span>
-      </div>
-    </v-list-item-subtitle>
+        <p v-if="showPayment" class="text-caption" style="color: #8696A0;">
+          💰 {{ formatCurrency(booking.deposit_amount || 0, booking.currency) }} / {{ formatCurrency(booking.total_amount || 0, booking.currency) }}
+        </p>
 
-    <template v-slot:append>
-      <div class="d-flex flex-column align-end">
-        <v-chip :color="statusColor" size="small" class="mb-1">
-          {{ booking.status }}
-        </v-chip>
-        <v-btn
-          icon
-          size="small"
-          color="success"
-          :href="whatsappLink"
-          target="_blank"
-          @click.prevent="openWhatsApp"
-        >
-          <v-icon>mdi-whatsapp</v-icon>
-        </v-btn>
+        <!-- Status & WhatsApp -->
+        <div class="d-flex align-center justify-space-between mt-2">
+          <v-chip 
+            :color="statusColor" 
+            size="small" 
+            variant="flat"
+            style="height: 24px; font-size: 12px; font-weight: 500;"
+          >
+            {{ displayStatus }}
+          </v-chip>
+
+          <v-btn
+            icon
+            size="small"
+            elevation="0"
+            style="background: #25D366;"
+            @click.stop="openWhatsApp"
+          >
+            <v-icon color="white" size="20">mdi-whatsapp</v-icon>
+          </v-btn>
+        </div>
       </div>
-    </template>
-  </v-list-item>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   booking: {
@@ -74,32 +111,39 @@ const props = defineProps({
   }
 })
 
+const router = useRouter()
 const bookingStore = useBookingStore()
+const authStore = useAuthStore()
 
-// Status color mapping
+// Get display status based on business type
+const displayStatus = computed(() => {
+  return authStore.getDisplayStatus(props.booking.status)
+})
+
+// Status color mapping - WhatsApp-inspired soft colors
 const statusColor = computed(() => {
   const colors = {
-    'Inquiry': 'grey',
-    'Quoted': 'info',
-    'Deposit Paid': 'accent',
-    'Confirmed': 'success',
-    'Checked In': 'primary',
-    'Checked Out': 'grey-darken-1'
+    'Inquiry': '#8696A0',
+    'Quoted': '#06BEE1',
+    'Deposit Paid': '#F77F00',
+    'Confirmed': '#25D366',
+    'Checked In': '#128C7E',
+    'Checked Out': '#667781'
   }
-  return colors[props.booking.status] || 'grey'
+  return colors[props.booking.status] || '#8696A0'
 })
 
 // Status icon mapping
 const statusIcon = computed(() => {
   const icons = {
-    'Inquiry': 'mdi-help-circle',
-    'Quoted': 'mdi-file-document',
-    'Deposit Paid': 'mdi-cash',
+    'Inquiry': 'mdi-help-circle-outline',
+    'Quoted': 'mdi-file-document-outline',
+    'Deposit Paid': 'mdi-cash-check',
     'Confirmed': 'mdi-check-circle',
-    'Checked In': 'mdi-login',
-    'Checked Out': 'mdi-logout'
+    'Checked In': 'mdi-home-account',
+    'Checked Out': 'mdi-check-all'
   }
-  return icons[props.booking.status] || 'mdi-bookmark'
+  return icons[props.booking.status] || 'mdi-bookmark-outline'
 })
 
 // WhatsApp link
@@ -125,6 +169,18 @@ const timeSince = (dateString) => {
   return `${Math.floor(seconds / 86400)}d ago`
 }
 
+// Navigate to booking
+const navigateToBooking = () => {
+  router.push(`/bookings/${props.booking.id}`)
+}
+
+// Format currency
+const formatCurrency = (amount, currency = 'USD') => {
+  const symbols = { USD: '$', UGX: 'USh', KES: 'KSh', TZS: 'TSh', EUR: '€', GBP: '£' }
+  const symbol = symbols[currency] || '$'
+  return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
 // Open WhatsApp and mark as contacted
 const openWhatsApp = async (event) => {
   event.stopPropagation()
@@ -138,7 +194,12 @@ const openWhatsApp = async (event) => {
 </script>
 
 <style scoped>
-.booking-item {
-  border-bottom: 1px solid #e0e0e0;
+.booking-card {
+  transition: all 0.15s ease;
+}
+
+.booking-card:active {
+  background: #F5F6F6;
+  transform: scale(0.99);
 }
 </style>

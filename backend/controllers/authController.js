@@ -17,6 +17,8 @@ exports.register = [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('businessName').optional().trim(),
+  body('businessType').optional().isIn(['airbnb', 'tour']),
+  body('preferredCurrency').optional().isIn(['USD', 'UGX', 'KES', 'TZS', 'EUR', 'GBP']),
 
   async (req, res) => {
     try {
@@ -26,7 +28,7 @@ exports.register = [
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { email, password, businessName } = req.body;
+      const { email, password, businessName, businessType, preferredCurrency } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findByEmail(email);
@@ -41,7 +43,9 @@ exports.register = [
       const user = await User.create({
         email,
         passwordHash,
-        businessName: businessName || null
+        businessName: businessName || null,
+        businessType: businessType || 'airbnb',
+        preferredCurrency: preferredCurrency || 'USD'
       });
 
       // Generate JWT token
@@ -57,7 +61,11 @@ exports.register = [
         user: {
           id: user.id,
           email: user.email,
-          businessName: user.business_name
+          businessName: user.business_name,
+          businessType: user.business_type,
+          preferredCurrency: user.preferred_currency,
+          trialExpiresAt: user.trial_expires_at,
+          subscriptionStatus: user.subscription_status
         }
       });
     } catch (error) {
@@ -89,6 +97,7 @@ exports.login = [
       // Find user
       const user = await User.findByEmail(email);
       if (!user) {
+        // Generic error message to prevent email enumeration
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
@@ -97,6 +106,9 @@ exports.login = [
       if (!isValidPassword) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
+
+      // Update last login timestamp
+      await User.updateLastLogin(user.id);
 
       // Generate JWT token
       const token = jwt.sign(
@@ -111,7 +123,12 @@ exports.login = [
         user: {
           id: user.id,
           email: user.email,
-          businessName: user.business_name
+          businessName: user.business_name,
+          businessType: user.business_type,
+          isAdmin: user.is_admin,
+          preferredCurrency: user.preferred_currency,
+          trialExpiresAt: user.trial_expires_at,
+          subscriptionStatus: user.subscription_status
         }
       });
     } catch (error) {

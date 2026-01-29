@@ -37,6 +37,10 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('user')
       window.location.href = '/login'
     }
+    if (error.response?.status === 403 && error.response?.data?.trialExpired) {
+      // Trial expired - will be handled by component
+      return Promise.reject(error)
+    }
     return Promise.reject(error)
   }
 )
@@ -80,6 +84,32 @@ export default {
     },
     getDashboard() {
       return apiClient.get('/bookings/dashboard/today')
+    }
+  },
+
+  // Analytics
+  analytics: {
+    getHostAnalytics() {
+      return apiClient.get('/analytics/host')
+    },
+    getAdmin() {
+      return apiClient.get('/analytics/admin')
+    }
+  },
+
+  // Subscription
+  subscription: {
+    getStatus() {
+      return apiClient.get('/subscription/status')
+    },
+    activate(userId) {
+      return apiClient.post(`/subscription/activate/${userId}`)
+    },
+    deactivate(userId) {
+      return apiClient.post(`/subscription/deactivate/${userId}`)
+    },
+    getUsers() {
+      return apiClient.get('/subscription/users')
     }
   }
 }

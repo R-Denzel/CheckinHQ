@@ -13,6 +13,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('@/views/AdminLoginView.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/RegisterView.vue'),
@@ -23,6 +29,18 @@ const routes = [
     name: 'Dashboard',
     component: () => import('@/views/DashboardView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: () => import('@/views/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/subscriptions',
+    name: 'SubscriptionManagement',
+    component: () => import('@/views/SubscriptionManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/bookings',
@@ -59,11 +77,24 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth
+  const requiresAdmin = to.meta.requiresAdmin
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (!requiresAuth && authStore.isAuthenticated && (to.name === 'Login' || to.name === 'Register')) {
+    // Redirect to appropriate login page
+    next(requiresAdmin ? '/admin/login' : '/login')
+  } else if (requiresAdmin && !authStore.isAdmin) {
+    // Not an admin, redirect to regular dashboard
     next('/')
+  } else if (!requiresAuth && authStore.isAuthenticated) {
+    if (to.name === 'Login' || to.name === 'Register') {
+      // Already logged in, redirect to appropriate dashboard
+      next(authStore.isAdmin ? '/admin' : '/')
+    } else if (to.name === 'AdminLogin' && !authStore.isAdmin) {
+      // Regular user trying to access admin login
+      next('/')
+    } else {
+      next()
+    }
   } else {
     next()
   }
