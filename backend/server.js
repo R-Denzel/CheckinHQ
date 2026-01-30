@@ -55,11 +55,23 @@ app.use((err, req, res, next) => {
  * Start server
  */
 const HOST = process.env.HOST || '0.0.0.0';
+const runMigrations = require('./database/auto-migrate');
 
-app.listen(PORT, HOST, () => {
-  console.log(`\n✓ CheckinHQ API server running on ${HOST}:${PORT}`);
-  console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✓ Health check: http://localhost:${PORT}/health\n`);
+// Run migrations before starting server
+runMigrations().then(() => {
+  app.listen(PORT, HOST, () => {
+    console.log(`\n✓ CheckinHQ API server running on ${HOST}:${PORT}`);
+    console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✓ Health check: http://localhost:${PORT}/health\n`);
+  });
+}).catch(error => {
+  console.error('Failed to run migrations:', error);
+  // Start server anyway, migrations might already be applied
+  app.listen(PORT, HOST, () => {
+    console.log(`\n✓ CheckinHQ API server running on ${HOST}:${PORT}`);
+    console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✓ Health check: http://localhost:${PORT}/health\n`);
+  });
 });
 
 module.exports = app;
