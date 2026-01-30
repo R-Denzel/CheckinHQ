@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+// Use relative /api path in production (Vercel proxy), full URL in development
+const API_URL = import.meta.env.PROD 
+  ? '/api'  // Production: Use Vercel proxy
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000/api')  // Development: Use full URL
 
 /**
  * API Service
@@ -108,8 +111,16 @@ export default {
     deactivate(userId) {
       return apiClient.post(`/subscription/deactivate/${userId}`)
     },
+    toggle(userId) {
+      return apiClient.post(`/subscription/toggle/${userId}`)
+    },
     getUsers() {
       return apiClient.get('/subscription/users')
     }
+  },
+
+  // Direct POST method for compatibility
+  post(url, data) {
+    return apiClient.post(url, data)
   }
 }
