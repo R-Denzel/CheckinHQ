@@ -170,6 +170,12 @@ class Analytics {
         u.business_name,
         u.business_type,
         u.last_login_at,
+        u.subscription_status,
+        u.trial_expires_at,
+        CASE 
+          WHEN u.trial_expires_at IS NOT NULL AND u.trial_expires_at < CURRENT_TIMESTAMP THEN true 
+          ELSE false 
+        END as trial_expired,
         COUNT(b.id) as total_bookings,
         COUNT(CASE WHEN b.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as bookings_this_week,
         COALESCE(SUM(b.deposit_amount), 0) as total_deposits,
@@ -179,7 +185,7 @@ class Analytics {
       FROM users u
       LEFT JOIN bookings b ON u.id = b.user_id
       WHERE u.is_admin = FALSE
-      GROUP BY u.id, u.email, u.business_name, u.business_type, u.last_login_at
+      GROUP BY u.id, u.email, u.business_name, u.business_type, u.last_login_at, u.subscription_status, u.trial_expires_at
       ORDER BY total_bookings DESC, u.last_login_at DESC
     `;
     

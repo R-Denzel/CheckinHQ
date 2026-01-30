@@ -59,6 +59,11 @@ export const useBookingStore = defineStore('booking', {
         this.bookings.unshift(response.data.booking)
         return response.data.booking
       } catch (error) {
+        // Handle subscription errors
+        if (error.response?.status === 403 && error.response?.data?.trialExpired) {
+          const authStore = useAuthStore()
+          authStore.togglePaywall(true)
+        }
         this.error = error.response?.data?.error || 'Failed to create booking'
         throw error
       } finally {

@@ -1,0 +1,11 @@
+{
+  "name": "checkinhq-backend",
+  "version": "1.0.0",
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  },
+  "buildCommand": "npm install",
+  "startCommand": "node server.js",
+  "healthCheckPath": "/health"
+}

@@ -123,11 +123,13 @@
                   <tr>
                     <th>Host</th>
                     <th>Business Type</th>
+                    <th>Subscription</th>
                     <th class="text-right">Total Bookings</th>
                     <th class="text-right">This Week</th>
                     <th class="text-right">Deposits (Week)</th>
                     <th class="text-right">Follow-ups (Week)</th>
                     <th class="text-right">Last Active</th>
+                    <th class="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -140,6 +142,20 @@
                       <v-chip size="small" variant="outlined">
                         {{ user.business_type === 'tour' ? 'Tour' : 'Airbnb' }}
                       </v-chip>
+                    </td>
+                    <td>
+                      <div>
+                        <v-chip 
+                          size="small" 
+                          :color="getSubscriptionColor(user)"
+                          variant="flat"
+                        >
+                          {{ getSubscriptionLabel(user) }}
+                        </v-chip>
+                        <div v-if="user.trial_expires_at" class="text-caption text-grey mt-1">
+                          {{ formatTrialDate(user.trial_expires_at, user.trial_expired) }}
+                        </div>
+                      </div>
                     </td>
                     <td class="text-right font-weight-bold">{{ user.total_bookings }}</td>
                     <td class="text-right">
@@ -165,6 +181,17 @@
                     </td>
                     <td class="text-right text-caption">
                       {{ formatDate(user.last_login_at || user.last_booking_date) }}
+                    </td>
+                    <td class="text-right">
+                      <v-btn
+                        size="small"
+                        :color="user.subscription_status === 'active' ? 'error' : 'success'"
+                        variant="tonal"
+                        @click="toggleSubscription(user)"
+                        :loading="togglingUserId === user.id"
+                      >
+                        {{ user.subscription_status === 'active' ? 'Deactivate' : 'Activate' }}
+                      </v-btn>
                     </td>
                   </tr>
                 </tbody>
@@ -193,6 +220,7 @@ const trends = ref([])
 const userStats = ref([])
 const loading = ref(false)
 const error = ref(null)
+const togglingUserId = ref(null)
 
 const formatNumber = (num) => {
   return parseFloat(num).toLocaleString('en-US', {
@@ -211,6 +239,55 @@ const formatDate = (dateString) => {
   if (diffDays === 1) return 'Yesterday'
   if (diffDays < 7) return `${diffDays}d ago`
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const formatTrialDate = (dateString, isExpired) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24))
+  
+  if (isExpired) {
+    return `Trial expired ${formatDate(dateString)}`
+  } else if (diffDays > 0) {
+    return `Trial: ${diffDays} days left`
+  } else {
+    return 'Trial expired today'
+  }
+}
+
+const getSubscriptionColor = (user) => {
+  if (user.subscription_status === 'active') return 'success'
+  if (user.trial_expired) return 'error'
+  return 'warning'
+}
+
+const getSubscriptionLabel = (user) => {
+  if (user.subscription_status === 'active') return 'Active'
+  if (user.subscription_status === 'trial') return 'Trial'
+  return 'Expired'
+}
+
+const toggleSubscription = async (user) => {
+  if (!confirm(`Are you sure you want to ${user.subscription_status === 'active' ? 'deactivate' : 'activate'} subscription for ${user.business_name || user.email}?`)) {
+    return
+  }
+  
+  togglingUserId.value = user.id
+  
+  try {
+    await api.post(`/subscription/toggle/${user.id}`)
+    
+    // Refresh the dashboard data
+    await fetchDashboard()
+    
+    alert(`Subscription ${user.subscription_status === 'active' ? 'deactivated' : 'activated'} successfully`)
+  } catch (err) {
+    console.error('Toggle subscription error:', err)
+    alert(err.response?.data?.error || 'Failed to toggle subscription')
+  } finally {
+    togglingUserId.value = null
+  }
 }
 
 const fetchDashboard = async () => {

@@ -54,8 +54,10 @@ app.use((err, req, res, next) => {
 /**
  * Start server
  */
-app.listen(PORT, () => {
-  console.log(`\n✓ CheckinHQ API server running on port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`\n✓ CheckinHQ API server running on ${HOST}:${PORT}`);
   console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✓ Health check: http://localhost:${PORT}/health\n`);
 });

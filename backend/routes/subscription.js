@@ -72,6 +72,40 @@ router.post('/deactivate/:userId', authMiddleware, isAdmin, async (req, res) => 
   }
 });
 
+// Admin: Toggle subscription for a user
+router.post('/toggle/:userId', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = require('../database/db');
+    
+    // Get current status
+    const userResult = await pool.query(
+      'SELECT subscription_status FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const currentStatus = userResult.rows[0].subscription_status;
+    const newStatus = currentStatus === 'active' ? 'expired' : 'active';
+    
+    await pool.query(
+      'UPDATE users SET subscription_status = $1 WHERE id = $2',
+      [newStatus, userId]
+    );
+    
+    res.json({ 
+      message: `Subscription ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`,
+      newStatus 
+    });
+  } catch (error) {
+    console.error('Error toggling subscription:', error);
+    res.status(500).json({ error: 'Failed to toggle subscription' });
+  }
+});
+
 // Admin: Get all users with subscription info
 router.get('/users', authMiddleware, isAdmin, async (req, res) => {
   try {
