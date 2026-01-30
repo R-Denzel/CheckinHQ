@@ -3,7 +3,7 @@
  * Add this to server.js before starting the server
  */
 
-const pool = require('./database/db');
+const pool = require('./db');
 
 async function runMigrations() {
   try {
