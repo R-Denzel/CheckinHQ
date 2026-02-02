@@ -40,7 +40,29 @@ async function runMigrations() {
       console.log('⚠️ preferred_currency:', e.message);
     }
     
-    // Step 3: Add trial_expires_at column separately
+    // Step 3: Add currency column to bookings table
+    try {
+      await pool.query(`
+        ALTER TABLE bookings 
+        ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'USD'
+      `);
+      console.log('✓ bookings.currency column added/verified');
+    } catch (e) {
+      console.log('⚠️ bookings.currency:', e.message);
+    }
+    
+    // Step 4: Add trial_expires_at column separately
+    try {
+      await pool.query(`
+        ALTER TABLE bookings 
+        ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'USD'
+      `);
+      console.log('✓ bookings.currency column added/verified');
+    } catch (e) {
+      console.log('⚠️ bookings.currency:', e.message);
+    }
+    
+    // Step 4: Add trial_expires_at column separately
     try {
       await pool.query(`
         ALTER TABLE users 
@@ -51,7 +73,7 @@ async function runMigrations() {
       console.log('⚠️ trial_expires_at:', e.message);
     }
     
-    // Add subscription_status column separately
+    // Step 5: Add subscription_status column separately
     try {
       await pool.query(`
         ALTER TABLE users 
@@ -60,6 +82,28 @@ async function runMigrations() {
       console.log('✓ subscription_status column added/verified');
     } catch (e) {
       console.log('⚠️ subscription_status:', e.message);
+    }
+    
+    // Step 6: Ensure is_admin column exists with default false
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE
+      `);
+      console.log('✓ is_admin column added/verified');
+    } catch (e) {
+      console.log('⚠️ is_admin:', e.message);
+    }
+    
+    // Step 7: Add last_login_at column for tracking
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP
+      `);
+      console.log('✓ last_login_at column added/verified');
+    } catch (e) {
+      console.log('⚠️ last_login_at:', e.message);
     }
     
     // Add constraint
