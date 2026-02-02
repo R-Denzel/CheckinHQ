@@ -29,7 +29,18 @@ async function runMigrations() {
       }
     }
     
-    // Add trial_expires_at column separately
+    // Step 2: Add preferred_currency column if it doesn't exist
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS preferred_currency VARCHAR(3) DEFAULT 'USD'
+      `);
+      console.log('✓ preferred_currency column added/verified');
+    } catch (e) {
+      console.log('⚠️ preferred_currency:', e.message);
+    }
+    
+    // Step 3: Add trial_expires_at column separately
     try {
       await pool.query(`
         ALTER TABLE users 
