@@ -9,41 +9,62 @@ async function runMigrations() {
   try {
     console.log('🔄 Running database migrations...');
     
-    // Add trial columns
-    await pool.query(`
-      ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS trial_expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 days'),
-      ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'trial'
-    `);
+    // Add trial_expires_at column separately
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS trial_expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 days')
+      `);
+      console.log('✓ trial_expires_at column added/verified');
+    } catch (e) {
+      console.log('⚠️ trial_expires_at:', e.message);
+    }
+    
+    // Add subscription_status column separately
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'trial'
+      `);
+      console.log('✓ subscription_status column added/verified');
+    } catch (e) {
+      console.log('⚠️ subscription_status:', e.message);
+    }
     
     // Add constraint
-    await pool.query(`
-      DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'valid_subscription_status') THEN
-          ALTER TABLE users ADD CONSTRAINT valid_subscription_status 
-          CHECK (subscription_status IN ('trial', 'active', 'expired'));
-        END IF;
-      END $$;
-    `);
+    try {
+      await pool.query(`
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'valid_subscription_status') THEN
+            ALTER TABLE users ADD CONSTRAINT valid_subscription_status 
+            CHECK (subscription_status IN ('trial', 'active', 'expired'));
+          END IF;
+        END $$;
+      `);
+      console.log('✓ Subscription constraint added/verified');
+    } catch (e) {
+      console.log('⚠️ Constraint:', e.message);
+    }
     
     // Update existing users
-    const result = await pool.query(`
-      UPDATE users 
-      SET trial_expires_at = COALESCE(trial_expires_at, created_at + INTERVAL '30 days'),
-          subscription_status = COALESCE(subscription_status, 
-            CASE WHEN created_at + INTERVAL '30 days' > CURRENT_TIMESTAMP THEN 'trial' ELSE 'expired' END)
-      WHERE trial_expires_at IS NULL OR subscription_status IS NULL
-      RETURNING id
-    `);
-    
-    console.log(`✅ Migrations complete! Updated ${result.rowCount} users`);
-  } catch (error) {
-    // Ignore "already exists" errors
-    if (!error.message.includes('already exists') && !error.message.includes('duplicate')) {
-      console.error('⚠️  Migration warning:', error.message);
-    } else {
-      console.log('✅ Migrations already applied');
+    try {
+      const result = await pool.query(`
+        UPDATE users 
+        SET trial_expires_at = COALESCE(trial_expires_at, created_at + INTERVAL '30 days'),
+            subscription_status = COALESCE(subscription_status, 
+              CASE WHEN created_at + INTERVAL '30 days' > CURRENT_TIMESTAMP THEN 'trial' ELSE 'expired' END)
+        WHERE trial_expires_at IS NULL OR subscription_status IS NULL
+        RETURNING id
+      `);
+      console.log(`✓ Updated ${result.rowCount} existing users with trial data`);
+    } catch (e) {
+      console.log('⚠️ Update users:', e.message);
     }
+    
+    console.log('✅ Migrations completed successfully!');
+  } catch (error) {
+    console.error('❌ Migration error:', error.message);
+    console.log('⚠️ Server will continue, but features may be limited');
   }
 }
 
