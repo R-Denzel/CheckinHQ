@@ -4,10 +4,30 @@
  */
 
 const pool = require('./db');
+const fs = require('fs');
+const path = require('path');
 
 async function runMigrations() {
   try {
     console.log('🔄 Running database migrations...');
+    
+    // Step 1: Check if users table exists, if not create base schema
+    try {
+      await pool.query('SELECT 1 FROM users LIMIT 1');
+      console.log('✓ Base schema exists');
+    } catch (error) {
+      if (error.code === '42P01') { // Table doesn't exist
+        console.log('📋 Creating base schema...');
+        const schemaSQL = fs.readFileSync(
+          path.join(__dirname, 'schema.sql'),
+          'utf8'
+        );
+        await pool.query(schemaSQL);
+        console.log('✓ Base schema created successfully');
+      } else {
+        throw error;
+      }
+    }
     
     // Add trial_expires_at column separately
     try {
