@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="grad180" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#128C7E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#25D366;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="90" cy="90" r="90" fill="url(#grad180)"/>
+  
+  <!-- Chat bubble (message icon) -->
+  <path d="M 54 63 Q 54 50.4 66.6 50.4 L 113.4 50.4 Q 126 50.4 126 63 L 126 99 Q 126 111.6 113.4 111.6 L 81 111.6 L 63 126 L 63 111.6 Q 54 111.6 54 99 Z" 
+        fill="white" 
+        opacity="0.95"/>
+  
+  <!-- Three dots inside chat bubble -->
+  <circle cx="75.6" cy="81" r="5.4" fill="#128C7E"/>
+  <circle cx="90" cy="81" r="5.4" fill="#128C7E"/>
+  <circle cx="104.4" cy="81" r="5.4" fill="#128C7E"/>
+</svg>
