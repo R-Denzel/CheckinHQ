@@ -27,7 +27,7 @@
         <v-col cols="6">
           <div class="text-center pa-3">
             <div class="text-h4 font-weight-bold success--text">
-              ${{ formatNumber(analytics.total_deposits_this_month) }}
+              {{ formatCurrency(analytics.total_deposits_this_month) }}
             </div>
             <div class="text-caption text-grey">
               Deposits Recorded
@@ -77,6 +77,13 @@ const formatNumber = (num) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   })
+}
+
+const formatCurrency = (amount) => {
+  const currency = authStore.user?.preferred_currency || 'USD'
+  const symbols = { USD: '$', UGX: 'USh', KES: 'KSh', TZS: 'TSh', EUR: '€', GBP: '£' }
+  const symbol = symbols[currency] || '$'
+  return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
 }
 
 const getProgressColor = (rate) => {

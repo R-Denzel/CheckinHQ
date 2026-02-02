@@ -109,17 +109,17 @@
             <v-card-text>
               <div class="d-flex justify-space-between mb-2">
                 <span>Total Amount:</span>
-                <span class="font-weight-bold">${{ booking.total_amount || 0 }}</span>
+                <span class="font-weight-bold">{{ formatCurrency(booking.total_amount || 0, booking.currency) }}</span>
               </div>
               <div class="d-flex justify-space-between mb-2">
                 <span>Deposit Paid:</span>
-                <span class="font-weight-bold">${{ booking.deposit_amount || 0 }}</span>
+                <span class="font-weight-bold">{{ formatCurrency(booking.deposit_amount || 0, booking.currency) }}</span>
               </div>
               <v-divider class="my-2" />
               <div class="d-flex justify-space-between">
                 <span>Balance Due:</span>
                 <span class="font-weight-bold text-accent">
-                  ${{ (booking.total_amount || 0) - (booking.deposit_amount || 0) }}
+                  {{ formatCurrency((booking.total_amount || 0) - (booking.deposit_amount || 0), booking.currency) }}
                 </span>
               </div>
             </v-card-text>
