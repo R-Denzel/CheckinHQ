@@ -82,6 +82,74 @@ class User {
     const result = await pool.query(query, [businessName, id]);
     return result.rows[0];
   }
+
+  /**
+   * Set verification token for email verification
+   */
+  static async setVerificationToken(id, token) {
+    const query = `
+      UPDATE users 
+      SET verification_token = $1
+      WHERE id = $2
+    `;
+    await pool.query(query, [token, id]);
+  }
+
+  /**
+   * Verify email with token
+   */
+  static async verifyEmail(token) {
+    const query = `
+      UPDATE users 
+      SET email_verified = TRUE, verification_token = NULL
+      WHERE verification_token = $1
+      RETURNING id, email, email_verified
+    `;
+    const result = await pool.query(query, [token]);
+    return result.rows[0];
+  }
+
+  /**
+   * Set password reset token
+   */
+  static async setResetToken(email, token, expiry) {
+    const query = `
+      UPDATE users 
+      SET reset_token = $1, reset_token_expiry = $2
+      WHERE email = $3
+      RETURNING id, email
+    `;
+    const result = await pool.query(query, [token, expiry, email]);
+    return result.rows[0];
+  }
+
+  /**
+   * Find user by reset token (if not expired)
+   */
+  static async findByResetToken(token) {
+    const query = `
+      SELECT * FROM users 
+      WHERE reset_token = $1 
+      AND reset_token_expiry > CURRENT_TIMESTAMP
+    `;
+    const result = await pool.query(query, [token]);
+    return result.rows[0];
+  }
+
+  /**
+   * Reset password with token
+   */
+  static async resetPassword(token, newPasswordHash) {
+    const query = `
+      UPDATE users 
+      SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL
+      WHERE reset_token = $2 
+      AND reset_token_expiry > CURRENT_TIMESTAMP
+      RETURNING id, email
+    `;
+    const result = await pool.query(query, [newPasswordHash, token]);
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

@@ -106,6 +106,78 @@ async function runMigrations() {
       console.log('⚠️ last_login_at:', e.message);
     }
     
+    // Step 8: Add email verification columns
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE
+      `);
+      console.log('✓ email_verified column added/verified');
+    } catch (e) {
+      console.log('⚠️ email_verified:', e.message);
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)
+      `);
+      console.log('✓ verification_token column added/verified');
+    } catch (e) {
+      console.log('⚠️ verification_token:', e.message);
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)
+      `);
+      console.log('✓ reset_token column added/verified');
+    } catch (e) {
+      console.log('⚠️ reset_token:', e.message);
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP
+      `);
+      console.log('✓ reset_token_expiry column added/verified');
+    } catch (e) {
+      console.log('⚠️ reset_token_expiry:', e.message);
+    }
+    
+    // Step 8: Add email verification columns
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE
+      `);
+      console.log('✓ email_verified column added/verified');
+    } catch (e) {
+      console.log('⚠️ email_verified:', e.message);
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS verification_token TEXT
+      `);
+      console.log('✓ verification_token column added/verified');
+    } catch (e) {
+      console.log('⚠️ verification_token:', e.message);
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS verification_token_expiry TIMESTAMP
+      `);
+      console.log('✓ verification_token_expiry column added/verified');
+    } catch (e) {
+      console.log('⚠️ verification_token_expiry:', e.message);
+    }
+    
     // Add constraint
     try {
       await pool.query(`
