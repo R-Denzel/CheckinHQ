@@ -80,7 +80,7 @@ const formatNumber = (num) => {
 }
 
 const formatCurrency = (amount) => {
-  const currency = authStore.user?.preferred_currency || 'USD'
+  const currency = authStore.preferredCurrency
   const symbols = { USD: '$', UGX: 'USh', KES: 'KSh', TZS: 'TSh', EUR: '€', GBP: '£' }
   const symbol = symbols[currency] || '$'
   return `${symbol}${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`

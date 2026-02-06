@@ -59,6 +59,18 @@ export default {
     },
     getProfile() {
       return apiClient.get('/auth/me')
+    },
+    verifyEmail(token) {
+      return apiClient.post('/auth/verify-email', { token })
+    },
+    resendVerification() {
+      return apiClient.post('/auth/resend-verification')
+    },
+    forgotPassword(email) {
+      return apiClient.post('/auth/forgot-password', { email })
+    },
+    resetPassword(token, password) {
+      return apiClient.post('/auth/reset-password', { token, password })
     }
   },
 

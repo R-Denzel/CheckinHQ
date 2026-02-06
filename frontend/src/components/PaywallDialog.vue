@@ -1,13 +1,12 @@
 <template>
-  <v-dialog :model-value="show" max-width="500">
+  <v-dialog :model-value="show" @update:model-value="$emit('update:show', $event)" max-width="500" persistent>
     <v-card class="text-center pa-6">
       <v-btn
         icon="mdi-close"
         size="small"
         variant="text"
-        position="absolute"
         style="position: absolute; top: 8px; right: 8px;"
-        @click="closeDialog"
+        @click="$emit('update:show', false)"
       />
       <v-icon size="80" color="warning" class="mb-4">
         mdi-lock-clock
@@ -77,6 +76,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['update:show'])
+
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -98,9 +99,5 @@ const subscribe = () => {
 const logout = () => {
   authStore.logout()
   router.push('/login')
-}
-
-const closeDialog = () => {
-  authStore.togglePaywall(false)
 }
 </script>

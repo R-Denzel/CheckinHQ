@@ -153,7 +153,7 @@
 
     <!-- Paywall Dialog -->
     <PaywallDialog
-      :show="authStore.showPaywall || showSubscribe"
+      v-model:show="showPaywallDialog"
       :trial-expires-at="authStore.trialExpiresAt"
       :subscription-status="authStore.subscriptionStatus"
     />
@@ -180,6 +180,15 @@ const loading = computed(() => bookingStore.loading)
 const error = computed(() => bookingStore.error)
 const analyticsCard = ref(null)
 const showSubscribe = ref(false)
+const showPaywallDialog = computed({
+  get: () => authStore.showPaywall || showSubscribe.value,
+  set: (value) => {
+    if (!value) {
+      showSubscribe.value = false
+      authStore.togglePaywall(false)
+    }
+  }
+})
 const hideBanner = ref(false)
 
 const trialDaysRemaining = computed(() => {
