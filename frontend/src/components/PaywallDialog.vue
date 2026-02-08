@@ -1,24 +1,24 @@
 <template>
-  <v-dialog :model-value="show" @update:model-value="$emit('update:show', $event)" max-width="600" persistent scrollable>
-    <v-card class="text-center pa-6">
+  <v-dialog :model-value="show" @update:model-value="$emit('update:show', $event)" max-width="700" persistent scrollable>
+    <v-card class="text-center pa-8">
       <v-btn
         icon="mdi-close"
         size="small"
         variant="text"
-        style="position: absolute; top: 8px; right: 8px;"
+        style="position: absolute; top: 12px; right: 12px; z-index: 1;"
         @click="$emit('update:show', false)"
       />
       <v-icon size="80" color="warning" class="mb-4">
         mdi-lock-clock
       </v-icon>
       
-      <h2 class="text-h5 font-weight-bold mb-2">Trial Expired</h2>
+      <h2 class="text-h4 font-weight-bold mb-3">Trial Expired</h2>
       
-      <p class="text-body-1 mb-4" style="color: #667781;">
+      <p class="text-body-1 mb-6" style="color: #667781; max-width: 500px; margin: 0 auto;">
         Your CheckinHQ trial has ended. Subscribe to keep managing bookings.
       </p>
       
-      <v-card color="#F0F2F5" flat class="pa-4 mb-4">
+      <v-card color="#F0F2F5" flat class="pa-4 mb-6" style="max-width: 400px; margin: 0 auto;">
         <div class="d-flex justify-space-between mb-2">
           <span class="font-weight-medium">Trial ended:</span>
           <span>{{ formatDate(trialExpiresAt) }}</span>
@@ -29,56 +29,82 @@
         </div>
       </v-card>
       
-      <v-divider class="my-4" />
+      <v-divider class="my-6" />
       
-      <h3 class="text-h6 mb-3">Continue with CheckinHQ</h3>
+      <h3 class="text-h5 mb-6">Continue with CheckinHQ</h3>
       
-      <v-card 
-        variant="outlined" 
-        class="pa-4 mb-3 cursor-pointer" 
-        :color="selectedPlan === 'monthly' ? 'primary' : ''"
-        @click="selectPlan('monthly')"
-      >
-        <div class="d-flex justify-space-between align-center">
-          <div class="text-left flex-grow-1">
-            <div class="text-h6 font-weight-bold">{{ pricing.monthly }}/month</div>
-            <div class="text-caption">Unlimited bookings • Pay monthly</div>
-          </div>
-          <v-btn 
-            :color="selectedPlan === 'monthly' ? 'primary' : 'default'" 
-            :variant="selectedPlan === 'monthly' ? 'flat' : 'outlined'"
-            size="large" 
+      <!-- Pricing Cards -->
+      <v-row class="mb-6">
+        <v-col cols="12" md="6">
+          <v-card 
+            variant="outlined" 
+            class="pa-6 cursor-pointer pricing-card h-100" 
+            :class="{ 'selected-plan': selectedPlan === 'monthly' }"
+            :color="selectedPlan === 'monthly' ? 'primary' : ''"
             @click="selectPlan('monthly')"
           >
-            {{ selectedPlan === 'monthly' ? 'Selected' : 'Select' }}
-          </v-btn>
-        </div>
-      </v-card>
-      
-      <v-card 
-        variant="outlined" 
-        class="pa-4 mb-3 cursor-pointer" 
-        :color="selectedPlan === 'yearly' ? 'primary' : ''"
-        @click="selectPlan('yearly')"
-      >
-        <div class="d-flex justify-space-between align-center">
-          <div class="text-left flex-grow-1">
-            <div class="d-flex align-center gap-2">
-              <div class="text-h6 font-weight-bold">{{ pricing.yearly }}/year</div>
-              <v-chip size="x-small" color="success">Save 17%</v-chip>
+            <div class="d-flex flex-column align-center text-center h-100">
+              <div class="mb-4">
+                <div class="text-h4 font-weight-bold mb-2">{{ pricing.monthly }}</div>
+                <div class="text-subtitle-1 text-grey">per month</div>
+              </div>
+              <div class="mb-4">
+                <div class="text-body-2 mb-1">✓ Unlimited bookings</div>
+                <div class="text-body-2">✓ Pay monthly</div>
+              </div>
+              <v-spacer />
+              <v-btn 
+                :color="selectedPlan === 'monthly' ? 'primary' : 'default'" 
+                :variant="selectedPlan === 'monthly' ? 'flat' : 'outlined'"
+                size="large"
+                block
+                class="mt-4"
+              >
+                {{ selectedPlan === 'monthly' ? '✓ Selected' : 'Select Plan' }}
+              </v-btn>
             </div>
-            <div class="text-caption">Unlimited bookings • Pay yearly</div>
-          </div>
-          <v-btn 
-            :color="selectedPlan === 'yearly' ? 'primary' : 'default'" 
-            :variant="selectedPlan === 'yearly' ? 'flat' : 'outlined'"
-            size="large" 
+          </v-card>
+        </v-col>
+        
+        <v-col cols="12" md="6">
+          <v-card 
+            variant="outlined" 
+            class="pa-6 cursor-pointer pricing-card h-100" 
+            :class="{ 'selected-plan': selectedPlan === 'yearly' }"
+            :color="selectedPlan === 'yearly' ? 'primary' : ''"
             @click="selectPlan('yearly')"
           >
-            {{ selectedPlan === 'yearly' ? 'Selected' : 'Select' }}
-          </v-btn>
-        </div>
-      </v-card>
+            <v-chip 
+              size="small" 
+              color="success" 
+              class="best-value-chip"
+              style="position: absolute; top: -12px; right: 20px;"
+            >
+              Save 17%
+            </v-chip>
+            <div class="d-flex flex-column align-center text-center h-100">
+              <div class="mb-4">
+                <div class="text-h4 font-weight-bold mb-2">{{ pricing.yearly }}</div>
+                <div class="text-subtitle-1 text-grey">per year</div>
+              </div>
+              <div class="mb-4">
+                <div class="text-body-2 mb-1">✓ Unlimited bookings</div>
+                <div class="text-body-2">✓ Pay yearly & save</div>
+              </div>
+              <v-spacer />
+              <v-btn 
+                :color="selectedPlan === 'yearly' ? 'primary' : 'default'" 
+                :variant="selectedPlan === 'yearly' ? 'flat' : 'outlined'"
+                size="large"
+                block
+                class="mt-4"
+              >
+                {{ selectedPlan === 'yearly' ? '✓ Selected' : 'Select Plan' }}
+              </v-btn>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
       
       <v-btn 
         color="primary" 
@@ -88,12 +114,14 @@
         :loading="paymentLoading"
         :disabled="!selectedPlan"
         @click="subscribe"
+        style="max-width: 500px; margin: 0 auto;"
       >
-        <v-icon left>mdi-credit-card</v-icon>
+        <v-icon left class="mr-2">mdi-credit-card</v-icon>
         Pay with M-Pesa / Card
       </v-btn>
       
-      <p class="text-caption text-grey mb-2">
+      <p class="text-caption text-grey mb-4">
+        <v-icon size="16" color="success">mdi-shield-check</v-icon>
         Secure payment via Pesapal
       </p>
       
@@ -220,10 +248,27 @@ const logout = () => {
 </script>
 
 <style scoped>
-.cursor-pointer {
-  cursor: pointer;
-  transition: transform 0.2s;
+.cursor-pointeall 0.3s ease;
+  position: relative;
 }
+
+.pricing-card {
+  border: 2px solid transparent;
+  min-height: 280px;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.selected-plan {
+  border-color: rgb(var(--v-theme-primary)) !important;
+  box-shadow: 0 4px 20px rgba(var(--v-theme-primary), 0.2);
+}
+
+.best-value-chip {
+  z-index: 1
 .cursor-pointer:hover {
   transform: scale(1.02);
 }
