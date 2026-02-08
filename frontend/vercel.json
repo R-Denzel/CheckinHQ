@@ -5,19 +5,8 @@
       "destination": "https://checkinhq-backend.up.railway.app/api/:path*"
     },
     {
-      "source": "/((?!.*\\.).*)",
+      "source": "/:path*",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/manifest.json",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
     }
   ]
 }
