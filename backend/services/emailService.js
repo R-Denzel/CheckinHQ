@@ -1,24 +1,23 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 /**
  * Email Service
  * Handles sending verification and password reset emails
  */
 
-// Create transporter
+// Initialize Resend client (HTTP API - not blocked by Railway)
+let resendClient = null;
+if (process.env.EMAIL_SERVICE === 'resend' && process.env.RESEND_API_KEY) {
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+  console.log('✓ Using Resend HTTP API for emails');
+}
+
+// Create transporter (fallback for other services)
 const createTransporter = () => {
-  // Resend (Easiest & Modern - RECOMMENDED)
+  // Resend uses HTTP API (handled separately above)
   if (process.env.EMAIL_SERVICE === 'resend') {
-    console.log('✓ Using Resend for emails');
-    return nodemailer.createTransport({
-      host: 'smtp.resend.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'resend',
-        pass: process.env.RESEND_API_KEY
-      }
-    });
+    return null; // Not using SMTP for Resend
   }
 
   // Brevo (formerly Sendinblue) - 300 emails/day free
@@ -98,6 +97,65 @@ const transporter = createTransporter();
 const sendVerificationEmail = async (email, verificationToken) => {
   const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
   
+  // Use Resend HTTP API if available
+  if (resendClient) {
+    try {
+      const { data, error } = await resendClient.emails.send({
+        from: process.env.EMAIL_FROM || 'CheckinHQ <onboarding@resend.dev>',
+        to: email,
+        subject: 'Verify Your Email - CheckinHQ',
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #128C7E 0%, #25D366 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+                .button { display: inline-block; background: #25D366; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Welcome to CheckinHQ!</h1>
+                </div>
+                <div class="content">
+                  <p>Hi there,</p>
+                  <p>Thanks for signing up! Please verify your email address to get started with CheckinHQ.</p>
+                  <p style="text-align: center;">
+                    <a href="${verificationUrl}" class="button">Verify Email Address</a>
+                  </p>
+                  <p>Or copy and paste this link into your browser:</p>
+                  <p style="word-break: break-all; color: #128C7E;">${verificationUrl}</p>
+                  <p>This link will expire in 24 hours.</p>
+                  <p>If you didn't create an account, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                  <p>&copy; ${new Date().getFullYear()} CheckinHQ. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `
+      });
+      
+      if (error) {
+        console.error('✗ Resend API error:', error);
+        return false;
+      }
+      
+      console.log('✓ Verification email sent via Resend API:', data.id);
+      return true;
+    } catch (error) {
+      console.error('✗ Failed to send verification email:', error);
+      return false;
+    }
+  }
+  
+  // Fallback to nodemailer for other providers
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'CheckinHQ <noreply@checkinhq.com>',
     to: email,
@@ -156,6 +214,68 @@ const sendVerificationEmail = async (email, verificationToken) => {
 const sendPasswordResetEmail = async (email, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
   
+  // Use Resend HTTP API if available
+  if (resendClient) {
+    try {
+      const { data, error } = await resendClient.emails.send({
+        from: process.env.EMAIL_FROM || 'CheckinHQ <onboarding@resend.dev>',
+        to: email,
+        subject: 'Reset Your Password - CheckinHQ',
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #128C7E 0%, #25D366 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+                .button { display: inline-block; background: #25D366; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+                .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Password Reset Request</h1>
+                </div>
+                <div class="content">
+                  <p>Hi there,</p>
+                  <p>We received a request to reset your password for your CheckinHQ account.</p>
+                  <p style="text-align: center;">
+                    <a href="${resetUrl}" class="button">Reset Password</a>
+                  </p>
+                  <p>Or copy and paste this link into your browser:</p>
+                  <p style="word-break: break-all; color: #128C7E;">${resetUrl}</p>
+                  <div class="warning">
+                    <strong>⚠️ Security Notice:</strong> This link will expire in 1 hour.
+                  </div>
+                  <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+                </div>
+                <div class="footer">
+                  <p>&copy; ${new Date().getFullYear()} CheckinHQ. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `
+      });
+      
+      if (error) {
+        console.error('✗ Resend API error:', error);
+        return false;
+      }
+      
+      console.log('✓ Password reset email sent via Resend API:', data.id);
+      return true;
+    } catch (error) {
+      console.error('✗ Failed to send password reset email:', error);
+      return false;
+    }
+  }
+  
+  // Fallback to nodemailer for other providers
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'CheckinHQ <noreply@checkinhq.com>',
     to: email,
