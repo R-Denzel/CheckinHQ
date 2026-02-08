@@ -33,20 +33,58 @@
       
       <h3 class="text-h6 mb-3">Continue with CheckinHQ</h3>
       
-      <v-card variant="outlined" class="pa-4 mb-3" color="primary">
+      <v-card variant="outlined" class="pa-4 mb-3" :color="selectedPlan === 'monthly' ? 'primary' : ''">
         <div class="d-flex justify-space-between align-center">
           <div class="text-left">
-            <div class="text-h6 font-weight-bold">$10/month</div>
-            <div class="text-caption">Unlimited bookings</div>
+            <div class="text-h6 font-weight-bold">KSh 1,000/month</div>
+            <div class="text-caption">Unlimited bookings • Pay monthly</div>
           </div>
-          <v-btn color="primary" size="large" @click="subscribe">
-            Subscribe Now
+          <v-btn 
+            :color="selectedPlan === 'monthly' ? 'primary' : 'default'" 
+            :variant="selectedPlan === 'monthly' ? 'flat' : 'outlined'"
+            size="large" 
+            @click="selectPlan('monthly')"
+          >
+            {{ selectedPlan === 'monthly' ? 'Selected' : 'Select' }}
           </v-btn>
         </div>
       </v-card>
       
-      <p class="text-caption text-grey mb-4">
-        Simple, affordable booking management for your business
+      <v-card variant="outlined" class="pa-4 mb-3" :color="selectedPlan === 'yearly' ? 'primary' : ''">
+        <div class="d-flex justify-space-between align-center">
+          <div class="text-left">
+            <div class="d-flex align-center gap-2">
+              <div class="text-h6 font-weight-bold">KSh 10,000/year</div>
+              <v-chip size="x-small" color="success">Save 17%</v-chip>
+            </div>
+            <div class="text-caption">Unlimited bookings • Pay yearly</div>
+          </div>
+          <v-btn 
+            :color="selectedPlan === 'yearly' ? 'primary' : 'default'" 
+            :variant="selectedPlan === 'yearly' ? 'flat' : 'outlined'"
+            size="large" 
+            @click="selectPlan('yearly')"
+          >
+            {{ selectedPlan === 'yearly' ? 'Selected' : 'Select' }}
+          </v-btn>
+        </div>
+      </v-card>
+      
+      <v-btn 
+        color="primary" 
+        size="x-large" 
+        block 
+        class="mb-4"
+        :loading="paymentLoading"
+        :disabled="!selectedPlan"
+        @click="subscribe"
+      >
+        <v-icon left>mdi-credit-card</v-icon>
+        Pay with M-Pesa / Card
+      </v-btn>
+      
+      <p class="text-caption text-grey mb-2">
+        Secure payment via Pesapal
       </p>
       
       <v-btn variant="text" @click="logout" color="grey">
@@ -57,9 +95,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/services/api'
 
 const props = defineProps({
   show: {
@@ -80,6 +119,8 @@ const emit = defineEmits(['update:show'])
 
 const router = useRouter()
 const authStore = useAuthStore()
+const selectedPlan = ref('monthly')
+const paymentLoading = ref(false)
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
@@ -91,9 +132,36 @@ const formatDate = (dateString) => {
   })
 }
 
-const subscribe = () => {
-  // TODO: Integrate with Stripe or mobile money
-  alert('Payment integration coming soon! Contact support to activate your subscription.')
+const selectPlan = (plan) => {
+  selectedPlan.value = plan
+}
+
+const subscribe = async () => {
+  if (!selectedPlan.value) {
+    alert('Please select a plan')
+    return
+  }
+  
+  paymentLoading.value = true
+  
+  try {
+    // Initialize payment with Pesapal
+    const response = await api.payments.initializePayment(selectedPlan.value)
+    
+    if (response.data.success && response.data.redirectUrl) {
+      // Store order tracking ID for verification
+      localStorage.setItem('pendingPayment', response.data.orderTrackingId)
+      
+      // Redirect to Pesapal payment page
+      window.location.href = response.data.redirectUrl
+    } else {
+      throw new Error('Failed to initialize payment')
+    }
+  } catch (error) {
+    console.error('Payment error:', error)
+    alert('Failed to initialize payment. Please try again or contact support.')
+    paymentLoading.value = false
+  }
 }
 
 const logout = () => {

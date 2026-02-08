@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const bookingRoutes = require('./routes/bookings');
 const analyticsRoutes = require('./routes/analytics');
 const subscriptionRoutes = require('./routes/subscription');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,6 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/payments', paymentRoutes);
 
 /**
  * Error handling

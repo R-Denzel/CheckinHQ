@@ -208,6 +208,40 @@ async function runMigrations() {
       console.log('⚠️ Update users:', e.message);
     }
     
+    // Step 9: Create payments table for Pesapal transactions
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS payments (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          order_id VARCHAR(100) UNIQUE NOT NULL,
+          order_tracking_id VARCHAR(100) UNIQUE NOT NULL,
+          amount DECIMAL(10, 2) NOT NULL,
+          currency VARCHAR(3) DEFAULT 'KES',
+          status VARCHAR(20) DEFAULT 'pending',
+          plan_type VARCHAR(20),
+          payment_method VARCHAR(50),
+          confirmation_code VARCHAR(100),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✓ payments table created/verified');
+    } catch (e) {
+      console.log('⚠️ payments table:', e.message);
+    }
+    
+    // Add subscription_expires_at column for tracking subscription expiry
+    try {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP
+      `);
+      console.log('✓ subscription_expires_at column added/verified');
+    } catch (e) {
+      console.log('⚠️ subscription_expires_at:', e.message);
+    }
+    
     console.log('✅ Migrations completed successfully!');
   } catch (error) {
     console.error('❌ Migration error:', error.message);

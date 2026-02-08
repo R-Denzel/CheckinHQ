@@ -131,6 +131,16 @@ export default {
     }
   },
 
+  // Payments (Pesapal)
+  payments: {
+    initializePayment(plan) {
+      return apiClient.post('/payments/subscribe', { plan })
+    },
+    verifyPayment(orderTrackingId) {
+      return apiClient.get(`/payments/verify/${orderTrackingId}`)
+    }
+  },
+
   // Direct POST method for compatibility
   post(url, data) {
     return apiClient.post(url, data)
