@@ -23,10 +23,37 @@ exports.initializePayment = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Define pricing (you can adjust these)
+    // Currency conversion rates (approximate, update as needed)
+    const conversionRates = {
+      'USD': 1,
+      'KES': 140,      // 1 USD = 140 KES
+      'UGX': 3700,     // 1 USD = 3,700 UGX
+      'TZS': 2500,     // 1 USD = 2,500 TZS
+      'EUR': 0.92,     // 1 USD = 0.92 EUR
+      'GBP': 0.79      // 1 USD = 0.79 GBP
+    };
+
+    // Base pricing in USD
+    // Airbnb hosts: $10/month, $100/year
+    // Tour companies: $15/month, $150/year
+    const isTourCompany = user.business_type === 'tour';
+    const baseMonthlyUSD = isTourCompany ? 15 : 10;
+    const baseYearlyUSD = isTourCompany ? 150 : 100;
+    
+    const userCurrency = user.preferred_currency || 'KES';
+    const rate = conversionRates[userCurrency] || conversionRates['KES'];
+    
     const pricing = {
-      monthly: { amount: 1000, currency: 'KES', description: 'CheckinHQ Monthly Subscription' },
-      yearly: { amount: 10000, currency: 'KES', description: 'CheckinHQ Yearly Subscription' }
+      monthly: { 
+        amount: Math.round(baseMonthlyUSD * rate), 
+        currency: userCurrency, 
+        description: `CheckinHQ Monthly Subscription - ${isTourCompany ? 'Tour Company' : 'Airbnb Host'}` 
+      },
+      yearly: { 
+        amount: Math.round(baseYearlyUSD * rate), 
+        currency: userCurrency, 
+        description: `CheckinHQ Yearly Subscription - ${isTourCompany ? 'Tour Company' : 'Airbnb Host'}` 
+      }
     };
 
     const selectedPlan = pricing[plan] || pricing.monthly;

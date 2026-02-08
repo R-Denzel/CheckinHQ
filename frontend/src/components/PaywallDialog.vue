@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :model-value="show" @update:model-value="$emit('update:show', $event)" max-width="500" persistent>
+  <v-dialog :model-value="show" @update:model-value="$emit('update:show', $event)" max-width="600" persistent scrollable>
     <v-card class="text-center pa-6">
       <v-btn
         icon="mdi-close"
@@ -33,10 +33,15 @@
       
       <h3 class="text-h6 mb-3">Continue with CheckinHQ</h3>
       
-      <v-card variant="outlined" class="pa-4 mb-3" :color="selectedPlan === 'monthly' ? 'primary' : ''">
+      <v-card 
+        variant="outlined" 
+        class="pa-4 mb-3 cursor-pointer" 
+        :color="selectedPlan === 'monthly' ? 'primary' : ''"
+        @click="selectPlan('monthly')"
+      >
         <div class="d-flex justify-space-between align-center">
-          <div class="text-left">
-            <div class="text-h6 font-weight-bold">KSh 1,000/month</div>
+          <div class="text-left flex-grow-1">
+            <div class="text-h6 font-weight-bold">{{ pricing.monthly }}/month</div>
             <div class="text-caption">Unlimited bookings • Pay monthly</div>
           </div>
           <v-btn 
@@ -50,11 +55,16 @@
         </div>
       </v-card>
       
-      <v-card variant="outlined" class="pa-4 mb-3" :color="selectedPlan === 'yearly' ? 'primary' : ''">
+      <v-card 
+        variant="outlined" 
+        class="pa-4 mb-3 cursor-pointer" 
+        :color="selectedPlan === 'yearly' ? 'primary' : ''"
+        @click="selectPlan('yearly')"
+      >
         <div class="d-flex justify-space-between align-center">
-          <div class="text-left">
+          <div class="text-left flex-grow-1">
             <div class="d-flex align-center gap-2">
-              <div class="text-h6 font-weight-bold">KSh 10,000/year</div>
+              <div class="text-h6 font-weight-bold">{{ pricing.yearly }}/year</div>
               <v-chip size="x-small" color="success">Save 17%</v-chip>
             </div>
             <div class="text-caption">Unlimited bookings • Pay yearly</div>
@@ -122,6 +132,45 @@ const authStore = useAuthStore()
 const selectedPlan = ref('monthly')
 const paymentLoading = ref(false)
 
+// Currency conversion rates
+const conversionRates = {
+  'USD': 1,
+  'KES': 140,
+  'UGX': 3700,
+  'TZS': 2500,
+  'EUR': 0.92,
+  'GBP': 0.79
+}
+
+// Currency symbols
+const currencySymbols = {
+  'USD': '$',
+  'KES': 'KSh ',
+  'UGX': 'USh ',
+  'TZS': 'TSh ',
+  'EUR': '€',
+  'GBP': '£'
+}
+
+// Dynamic pricing based on business type and currency
+const pricing = computed(() => {
+  const isTourCompany = authStore.businessType === 'tour'
+  const baseMonthly = isTourCompany ? 15 : 10  // USD
+  const baseYearly = isTourCompany ? 150 : 100  // USD
+  
+  const currency = authStore.preferredCurrency || 'KES'
+  const rate = conversionRates[currency] || conversionRates['KES']
+  const symbol = currencySymbols[currency] || 'KSh '
+  
+  const monthlyAmount = Math.round(baseMonthly * rate)
+  const yearlyAmount = Math.round(baseYearly * rate)
+  
+  return {
+    monthly: `${symbol}${monthlyAmount.toLocaleString()}`,
+    yearly: `${symbol}${yearlyAmount.toLocaleString()}`
+  }
+})
+
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
@@ -169,3 +218,13 @@ const logout = () => {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+.cursor-pointer {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.cursor-pointer:hover {
+  transform: scale(1.02);
+}
+</style>
