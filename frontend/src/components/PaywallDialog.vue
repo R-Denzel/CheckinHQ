@@ -248,7 +248,9 @@ const logout = () => {
 </script>
 
 <style scoped>
-.cursor-pointeall 0.3s ease;
+.cursor-pointer {
+  cursor: pointer;
+  transition: all 0.3s ease;
   position: relative;
 }
 
