@@ -270,8 +270,7 @@ const logout = () => {
 }
 
 .best-value-chip {
-  z-index: 1
-.cursor-pointer:hover {
-  transform: scale(1.02);
+  z-index: 1;
 }
+</style>
 </style>
